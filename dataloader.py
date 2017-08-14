@@ -23,7 +23,8 @@ class ImageFolderSR():
             #hr = tf.Scale([img1x.size[0]//4, img1x.size[1]//4])(img1x)                    
             hr = tf.RandomCrop([self.HRsize, self.HRsize])(img1x)        
         else:         
-            hr = tf.Scale([self.HRsize, self.HRsize])(img1x)        
+            
+            hr = tf.Scale(self.HRsize)(img1x)# self.HRsize])(img1x)        
         #lr = tf.Scale([self.LRsize, self.LRsize])(img1x)        
         
         return [tf.ToTensor()(hr)*2-1]#, tf.ToTensor()(lr), tf.ToTensor()(hr)]

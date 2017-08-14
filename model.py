@@ -9,7 +9,7 @@ class block(nn.Module):
         self.conv = nn.Conv2d(n, nout, (3,3), padding=1)#, bias=False)
     def forward(self, x):
         x = self.conv(x)
-        x = nn.functional.elu(x)
+        x = nn.functional.selu(x)
         return x
 
 class G(nn.Module):
@@ -85,7 +85,7 @@ class Decoder(nn.Module):
         x = x.view(-1,64)        
         x = self.linear(x)
         x = x.view(-1, 128, 8,8)
-        x = nn.functional.elu(x)
+        x = nn.functional.selu(x)
         x = self.main(x)
         return x
 

@@ -16,7 +16,7 @@ parser.add_argument('--dataroot', default='128_crop',  help='path to dataset')
 parser.add_argument('--batchSize', type=int, default=8, help='input batch size')
 parser.add_argument('--workers', type=int, help='number of data loading workers', default=8)
 parser.add_argument('--nz', type=int, help='size of random vector', default=64)
-parser.add_argument('--imsize', type=int, help='size of image', default=64)
+parser.add_argument('--imsize', type=int, help='size of image', default=128)
 parser.add_argument('--gamma', type=float, help='gamma', default=0.5)
 parser.add_argument('--lr', type=float, help='learning rate', default=0.0001)
 parser.add_argument('--comment', help='comments', default='')
@@ -25,11 +25,6 @@ opt = parser.parse_args()
 print(opt)
 opt.batchSize = opt.batchSize * torch.cuda.device_count()
 
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        #m.weight.data.normal_(0.0, 0.02)
-        nn.init.xavier_normal(m.weight)
 
 
 dataset = ImageFolderSR(root=opt.dataroot, HRsize=opt.imsize, is_crop=False)#, transform=inputTF, target_transform=GTTF)
@@ -44,12 +39,11 @@ if opt.imsize==128:
 
 netG = makeParallel(netG)
 netD = makeParallel(netD)
-#netG.apply(weights_init)
-#netD.apply(weights_init)
 
 
 optimG = torch.optim.Adam(netG.parameters(), lr = opt.lr, betas=(0.5, 0.999))
 optimD = torch.optim.Adam(netD.parameters(), lr = opt.lr, betas=(0.5, 0.999))
+
 if opt.workers==0:
     expname = ''
 else:
@@ -57,7 +51,6 @@ else:
 writer = SummaryWriter('runs/'+socket.gethostname()+'-'+datetime.now().strftime('%B%d-%H-%M-%S')+expname+opt.comment)
 
 def L_Df(v):
-    #target = v.clone().detach()
     reconstructed, _ = netD(v)
     return (reconstructed-v).abs().mean()
 
@@ -100,13 +93,7 @@ for epoch in range(1000):
         writer.add_scalar('loss/L_G', L_G_val, n_iter)
         writer.add_scalar('loss/d_real', d_real.data[0], n_iter)
         writer.add_scalar('loss/d_fake', d_fake.data[0], n_iter)
-        if n_iter%100==1:
-            for name, param in netD.named_parameters():
-                if param.grad:
-                    writer.add_scalar('D_grad/'+name, param.grad.abs().mean().data[0], n_iter)
-            for name, param in netG.named_parameters():
-                if param.grad:
-                    writer.add_scalar('G_grad/'+name, param.grad.abs().mean().data[0], n_iter)
+
         LD_LG = L_D_val-L_G_val
         log_variable(M_global, L_D_val, L_G_val, kt, LD_LG)
         if n_iter%10000==0:
